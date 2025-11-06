@@ -1,9 +1,11 @@
 package bookify.Controller;
 
 import bookify.Controller.PopupMensagem.FabricaPopupMsg;
+import bookify.Factory.FabricaValidadorCadastro;
 import bookify.Interface.ICadastrar;
 import bookify.Interface.IFabricaPopupMsg;
 import bookify.Interface.IPopupMsg;
+import bookify.Interface.IValidadorCadastro;
 import bookify.Models.BookifyDatabase;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -21,62 +23,54 @@ public class LivrosCadastroController extends TelasLivrosController implements I
     private IFabricaPopupMsg MsgFabrica = new FabricaPopupMsg();
     
     @FXML
-    private Pane mainContainer;
+    public  Pane mainContainer;
     
     @FXML
-    private Text erroText;
+    public  Text erroText;
     
     @FXML
-    private TextField livroTextNumReg;
+    public  TextField livroTextNumReg;
     
     @FXML
-    private TextField livroTextTitulo;
+    public  TextField livroTextTitulo;
     
     @FXML
-    private TextField livroTextAutor;
+    public  TextField livroTextAutor;
     
     @FXML
-    private TextField livroTextVolume;
+    public  TextField livroTextVolume;
     
     @FXML
-    private TextField livroTextCategoria;
+    public  TextField livroTextCategoria;
     
     @FXML
-    private TextField livroTextExemplar;
+    public  TextField livroTextExemplar;
     
     @FXML
-    private TextField livroTextLocal;
+    public  TextField livroTextLocal;
     
     @FXML
-    private DatePicker livroTextData;
+    public  DatePicker livroTextData;
     
     @FXML
-    private TextField livroTextEditora;
+    public  TextField livroTextEditora;
     
     @FXML
-    private TextField livroTextAnoPublicacao;
+    public  TextField livroTextAnoPublicacao;
     
     @FXML
-    private TextField livroTextFormaAquisicao;
+    public  TextField livroTextFormaAquisicao;
     
     @FXML
-    private TextField livroTextObservacao;
+    public TextField livroTextObservacao;
     
     // Cadastra um livro no banco de dados
     @FXML
     public void cadastrar(ActionEvent evento) throws IOException{
-        if(this.livroTextNumReg.getText().isEmpty() ||
-           this.livroTextTitulo.getText().isEmpty() ||
-           this.livroTextAutor.getText().isEmpty() ||
-           this.livroTextVolume.getText().isEmpty() ||
-           this.livroTextExemplar.getText().isEmpty() ||
-           this.livroTextLocal.getText().isEmpty() ||
-           this.livroTextData.getEditor().getText().isEmpty() ||
-           this.livroTextEditora.getText().isEmpty() ||
-           this.livroTextAnoPublicacao.getText().isEmpty() ||
-           this.livroTextFormaAquisicao.getText().isEmpty() ||
-           this.livroTextCategoria.getText().isEmpty()){
-           this.erroText.setText("Preencha todos os campos !");
+        IValidadorCadastro validador = FabricaValidadorCadastro.criar("livro", this);
+        String erro = validador.validar();
+        if (erro != null) {
+            this.erroText.setText(erro);   
         } else {
             String [] columns = {
                 "num_registro", "titulo", "autor", "volume", "exemplar", "local", "data", "editora", 

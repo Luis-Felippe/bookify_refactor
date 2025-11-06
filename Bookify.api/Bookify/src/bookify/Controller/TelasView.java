@@ -1,5 +1,6 @@
 package bookify.Controller;
 
+import bookify.Factory.ScreenFactory;
 import bookify.Main;
 import java.io.IOException;
 import java.util.Arrays;
@@ -11,10 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TelasView {
-
+    
+    private static TelasView instance;
     private final Map<String, String> telas = new HashMap<>();
 
-    public TelasView() {
+    private TelasView() {
         // Mapeamento nome lógico → nome do arquivo FXML
         telas.put("alunos/cadastro", "Alunos-cadastro-window.fxml");
         telas.put("alunos/menu", "Alunos-window.fxml");
@@ -32,6 +34,13 @@ public class TelasView {
         telas.put("professores/edicao", "Professor-edicao-window.fxml");
         telas.put("alunos/edicao", "Aluno-edicao-window.fxml");
         telas.put("livros/edicao", "Livros-edicao-window.fxml");
+    }
+    
+    public static TelasView getInstance() {
+        if (instance == null) {
+            instance = new TelasView();
+        }
+        return instance;
     }
 
     public void trocarTela(String nomeTela) throws IOException {

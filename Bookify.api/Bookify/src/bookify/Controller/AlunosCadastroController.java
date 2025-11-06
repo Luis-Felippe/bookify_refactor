@@ -1,9 +1,11 @@
 package bookify.Controller;
 
 import bookify.Controller.PopupMensagem.FabricaPopupMsg;
+import bookify.Factory.FabricaValidadorCadastro;
 import bookify.Interface.ICadastrar;
 import bookify.Interface.IFabricaPopupMsg;
 import bookify.Interface.IPopupMsg;
+import bookify.Interface.IValidadorCadastro;
 import bookify.Models.BookifyDatabase;
 import java.io.IOException;
 import java.net.URL;
@@ -26,36 +28,36 @@ public class AlunosCadastroController extends TelasAlunoController implements In
     private IFabricaPopupMsg MsgFabrica = new FabricaPopupMsg();
     
     @FXML
-    private Text erroText;
+    public Text erroText;
     
     @FXML
-    private ChoiceBox<String> Turma;
+    public ChoiceBox<String> Turma;
     
     @FXML
-    private Pane mainContainer;
+    public Pane mainContainer;
     
     @FXML
-    private TextField aluTextCurso;
+    public TextField aluTextCurso;
 
     @FXML
-    private TextField aluTextEmail;
+    public TextField aluTextEmail;
 
     @FXML
-    private TextField aluTextEndereco;
+    public TextField aluTextEndereco;
 
     @FXML
-    private TextField aluTextMatricula;
+    public TextField aluTextMatricula;
 
     @FXML
-    private TextField aluTextNome;
+    public TextField aluTextNome;
 
     @FXML
-    private TextField aluTextSerie;
+    public TextField aluTextSerie;
 
     @FXML
-    private TextField aluTextTelefone;
+    public TextField aluTextTelefone;
     
-    public void preecherTurmas(){
+            public void preecherTurmas(){
         Turma.getItems().clear();
         Turma.getItems().add("1-A");
         Turma.getItems().add("1-B");;
@@ -74,13 +76,10 @@ public class AlunosCadastroController extends TelasAlunoController implements In
     // Cadastra o aluno no banco de dados
     @FXML
     public void cadastrar(ActionEvent evento) throws IOException {
-        if (this.aluTextCurso.getText().isEmpty()
-            || this.aluTextEmail.getText().isEmpty()
-            || this.aluTextMatricula.getText().isEmpty()
-            || this.aluTextNome.getText().isEmpty()
-            || this.Turma.getValue() == null
-            || this.aluTextTelefone.getText().isEmpty()) {
-            this.erroText.setText("Preencha todos os campos !");   
+        IValidadorCadastro validador = FabricaValidadorCadastro.criar("aluno", this);
+        String erro = validador.validar();
+        if (erro != null) {
+            this.erroText.setText(erro);   
         } else {
             String[] columns = {
                 "nome", "telefone", "tipo", "matricula", "turma", "curso", "email"

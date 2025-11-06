@@ -2,9 +2,11 @@
 package bookify.Controller;
 
 import bookify.Controller.PopupMensagem.FabricaPopupMsg;
+import bookify.Factory.FabricaValidadorCadastro;
 import bookify.Interface.ICadastrar;
 import bookify.Interface.IFabricaPopupMsg;
 import bookify.Interface.IPopupMsg;
+import bookify.Interface.IValidadorCadastro;
 import bookify.Models.BookifyDatabase;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -21,35 +23,33 @@ public class ProfessorCadastroController extends TelasProfessorController implem
     private IFabricaPopupMsg MsgFabrica = new FabricaPopupMsg();
     
     @FXML
-    private Text erroText;
+    public  Text erroText;
     
     @FXML
-    private Pane mainContainer;
+    public  Pane mainContainer;
     
     @FXML
-    private TextField profTextNome;
+    public  TextField profTextNome;
     
     @FXML
-    private TextField profTextDisciplina;
+    public  TextField profTextDisciplina;
     
     @FXML
-    private TextField profTextEmail;
+    public  TextField profTextEmail;
     
     @FXML
-    private TextField profTextCpf;
+    public  TextField profTextCpf;
     
     @FXML
-    private TextField profTextTelefone;
+    public TextField profTextTelefone;
 
     // Cadastra o professor no banco de dados
     @FXML
     public void cadastrar(ActionEvent evento) throws IOException{
-        if(this.profTextNome.getText().isEmpty() ||
-           this.profTextTelefone.getText().isEmpty() ||
-           this.profTextCpf.getText().isEmpty() ||
-           this.profTextDisciplina.getText().isEmpty() ||
-           this.profTextEmail.getText().isEmpty()){
-           erroText.setText("Preencha todos os campos !");
+        IValidadorCadastro validador = FabricaValidadorCadastro.criar("professor", this);
+        String erro = validador.validar();
+        if (erro != null) {
+            this.erroText.setText(erro);   
         }
         else {
             String [] columns = {
