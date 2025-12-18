@@ -94,12 +94,12 @@ public class RealizarEmprestimoController extends TelasController implements Ini
                     String[] values = {currentLiv, currentUser, 
                         LivDateInicio.getEditor().getText(), LivDateDevolucao.getEditor().getText(), volume.getValue(), exemplar.getValue(),
                         LivTextTitulo.getText(), LivTextNome.getText(), LivTextTurma.getText(), LivTextTelefone.getText(), 
-                        LivTextMatricula.getText(), LivTextAutor.getText()
+                        LivTextAutor.getText()
                             
                     };
-                    String [] columns = {"num_registro_livro","id_usuario",
-                        "data_inicio","data_devolucao", "volume_livro", "exemplar_livro", "titulo_livro", "nome_usuario", "turma_usuario",
-                        "telefone_usuario", "identificador_usuario", "autor_livro"
+                    String [] columns = {"id_livro","id_usuario",
+                        "data_emprestimo","data_devolucao", "volume_livro", "exemplar_livro", "titulo_livro", "nome_usuario", "turma_usuario",
+                        "telefone_usuario", "autor_livro"
                     };
                     repositorio.save("emprestimo", columns, values);
                     carregarInformacao(null, null);
@@ -118,6 +118,7 @@ public class RealizarEmprestimoController extends TelasController implements Ini
                 error.setText("Preencha todos os campos!");
             }        
         }catch(SQLException ex){
+            System.out.println(ex.getMessage());
             error.setText(ex.getMessage());
         }
     }
@@ -152,7 +153,7 @@ public class RealizarEmprestimoController extends TelasController implements Ini
                     error_livro.setText("");
                     LivTextTitulo.setText(resLiv.getString("titulo"));
                     LivTextAutor.setText(resLiv.getString("autor"));
-                    currentLiv = resLiv.getString("num_registro");
+                    currentLiv = resLiv.getString("id_livro");
                     String currentVolume = resLiv.getString("volume");
                     volume.getItems().add(currentVolume);
                     do{

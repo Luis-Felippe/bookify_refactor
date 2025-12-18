@@ -24,193 +24,264 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
-public class EmprestimoListagemController extends TelasController implements Initializable{
-    
+
+public class EmprestimoListagemController extends TelasController implements Initializable {
+
     private BookifyDatabase repositorio = BookifyDatabase.getInstancia();
     private IFabricaPopupMsg MsgFabrica = new FabricaPopupMsg();
-    
+
     @FXML
     private ToggleButton atrasadosBtn;
-    
+
     @FXML
     private Pane mainContainer;
-    
+
     @FXML
     private TextField pesquisarText;
 
     @FXML
     private VBox render_box_elements;
-    
-    // Adiciona o componente que mostra as informações do empréstimo e seta seus atributos e funções
-    @FXML
-    private void adicionarComponente(HBox box, ResultSet res) throws IOException, SQLException{
+
+    private void adicionarComponente(
+        HBox box,
+        ResultSet res,
+        boolean isEncerrado
+    ) throws IOException, SQLException {
+
         FXMLLoader loader = new FXMLLoader();
         loader.setLocation(getClass().getResource("../View/Emprestimo-componente-window.fxml"));
         Pane painel = loader.load();
+
         EmprestimoComponenteController componente = loader.getController();
-        componente.setTexto(res.getString("titulo_livro"), 
-        res.getString("nome_usuario"),
-        res.getString("identificador_usuario"), 
-        res.getString("identificador_usuario"),
-        res.getString("data_inicio"), 
-        res.getString("data_devolucao"));
-        
 
-       
+        String idEmprestimo = res.getString("id_emprestimo");
+
+        componente.setTexto(
+            res.getString("titulo_livro"),
+            res.getString("nome_usuario"),
+            res.getString("id_usuario"),
+            res.getString("id_usuario"),
+            res.getString("data_emprestimo"),
+            res.getString("data_devolucao")
+        );
+
         Map<String, String> values = new HashMap<>();
-        values.put("data_inicio",res.getString("data_inicio"));
-        values.put("data_devolucao",res.getString("data_devolucao"));
-        values.put("id_usuario",res.getString("id_usuario"));
-        values.put("num_registro",res.getString("num_registro_livro"));
-        values.put("nome",res.getString("nome_usuario"));
-        values.put("titulo",res.getString("titulo_livro"));
-        values.put("autor",res.getString("autor_livro"));
-        values.put("cpf",res.getString("identificador_usuario"));
-        values.put("matricula",res.getString("identificador_usuario"));
-        values.put("turma", res.getString("turma_usuario"));
-        values.put("volume", res.getString("volume_livro"));
-        values.put("exemplar", res.getString("exemplar_livro"));
-        values.put("telefone", res.getString("telefone_usuario"));
-        
-        if(values.get("cpf") == null) values.replace("cpf", values.get("matricula"));
-        else values.replace("matricula", values.get("cpf"));
-        String id = res.getString("id_emprestimo");
+        values.put("id_emprestimo", idEmprestimo);
+        values.put("id_usuario", res.getString("id_usuario"));
+        values.put("id_livro", res.getString("id_livro"));
+        values.put("titulo_livro", res.getString("titulo_livro"));
+        values.put("autor_livro", res.getString("autor_livro"));
+        values.put("nome_usuario", res.getString("nome_usuario"));
+        values.put("turma_usuario", res.getString("turma_usuario"));
+        values.put("telefone_usuario", res.getString("telefone_usuario"));
+        values.put("volume_livro", res.getString("volume_livro"));
+        values.put("exemplar_livro", res.getString("exemplar_livro"));
+        values.put("data_emprestimo", res.getString("data_emprestimo"));
+        values.put("data_devolucao", res.getString("data_devolucao"));
 
-        boolean status = LocalDate.now().isBefore(LocalDate.parse(res.getString("data_devolucao")).plusDays(1));
-        componente.setStatus(status);  
+        EmprestimoComponenteController.EmprestimoStatus status;
 
-        componente.setEvento(()->{
-            emprestimoManipulador(id, mainContainer, values);
+        if (isEncerrado) {
+            status = EmprestimoComponenteController.EmprestimoStatus.ENCERRADO;
+        } else if (LocalDate.now().isAfter(LocalDate.parse(res.getString("data_devolucao")))) {
+            status = EmprestimoComponenteController.EmprestimoStatus.ATRASADO;
+        } else {
+            status = EmprestimoComponenteController.EmprestimoStatus.ATIVO;
+        }
+
+        componente.setStatus(status);
+
+        componente.setEvento(() -> {
+            switch (status) {
+                case ATIVO, ATRASADO ->
+                    emprestimoManipulador(idEmprestimo, mainContainer, values, status);
+
+                case ENCERRADO ->
+                    abrirPagamento(values);
+            }
         });
-        
+   
+
         box.getChildren().add(painel);
     }
-    
-    // cria o popup de um empréstimo
-    private void emprestimoManipulador(String id, Pane mainContainer, Map values){
+
+    private void emprestimoManipulador(
+        String id,
+        Pane mainContainer,
+        Map<String, String> values,
+        EmprestimoComponenteController.EmprestimoStatus status
+    ) {
+
         try {
-                FXMLLoader loaderPopup = new FXMLLoader();
-                loaderPopup.setLocation(getClass().getResource("../View/Popup-emprestimo.fxml"));
-                
-                Pane popup = loaderPopup.load();
-                
-                mainContainer.getChildren().add(popup);
-                
-                PopupEmprestimoController popupController = loaderPopup.getController();
-                popupController.setInfo(values.get("titulo").toString(),values.get("num_registro").toString(),
-                        values.get("autor").toString(),values.get("matricula").toString(),values.get("cpf").toString(),
-                        values.get("nome").toString(),values.get("data_inicio").toString(),values.get("data_devolucao").toString());
-                
-                popupController.setRenovarManipulador(()->{
-                    renovarManipulador(popup, mainContainer, id);
-                });
-                
-                popupController.setEncerrarManipulador(()->{
-                    encerrarManipulador(popup, mainContainer, id, values);
-                });
-                
-                popupController.setFecharManipulador(()->{
-                    mainContainer.getChildren().remove(popup);
-                });
-            } catch (IOException ex) {
-                Logger.getLogger(ProfessorListagemController.class.getName()).log(Level.SEVERE, null, ex);
+            FXMLLoader loaderPopup = new FXMLLoader();
+            loaderPopup.setLocation(getClass().getResource("../View/Popup-emprestimo.fxml"));
+            Pane popup = loaderPopup.load();
+
+            mainContainer.getChildren().add(popup);
+
+            PopupEmprestimoController popupController = loaderPopup.getController();
+
+            popupController.setInfo(
+                values.getOrDefault("titulo_livro", ""),
+                values.getOrDefault("id_livro", ""),
+                values.getOrDefault("autor_livro", ""),
+                values.getOrDefault("nome_usuario", ""),
+                values.getOrDefault("id_usuario", ""),
+                values.getOrDefault("nome_usuario", ""),
+                values.getOrDefault("data_emprestimo", ""),
+                values.getOrDefault("data_devolucao", "")
+            );
+
+            if (status == EmprestimoComponenteController.EmprestimoStatus.ATIVO) {
+
+                popupController.setEncerrarManipulador(() ->
+                    encerrarManipulador(popup, mainContainer, id, values)
+                );
+
+                popupController.setRenovarManipulador(() ->
+                    renovarManipulador(popup, mainContainer, id)
+                );
+
+            } else if (status == EmprestimoComponenteController.EmprestimoStatus.ATRASADO) {
+
+                popupController.setEncerrarManipulador(() ->
+                    encerrarManipulador(popup, mainContainer, id, values)
+                );
+
+                popupController.setRenovarManipulador(null); // ou regularizar depois
             }
+
+            popupController.setFecharManipulador(() ->
+                mainContainer.getChildren().remove(popup)
+            );
+
+        } catch (IOException ex) {
+            Logger.getLogger(EmprestimoListagemController.class.getName())
+                  .log(Level.SEVERE, null, ex);
+        }
     }
     
-    // Encerra o empréstimo
-    private void encerrarManipulador(Pane popup, Pane mainContainer, String id, Map values) {
+    private void abrirPagamento(Map<String, String> values) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("../View/Popup-pagamento.fxml")
+            );
+
+            Pane popup = loader.load();
+            mainContainer.getChildren().add(popup);
+
+            PopupPagamentoController controller = loader.getController();
+
+            controller.setDados(values);
+
+            controller.setFecharManipulador(() ->
+                mainContainer.getChildren().remove(popup)
+            );
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void encerrarManipulador(
+        Pane popup,
+        Pane mainContainer,
+        String id,
+        Map<String, String> values
+    ) {
+
         String[] columns = {
-            "data_emprestimo", 
+            "data_emprestimo",
             "data_devolucao",
             "id_usuario",
-            "num_registro_livro",
+            "id_livro",
             "titulo_livro",
             "volume_livro",
             "exemplar_livro",
             "nome_usuario",
             "turma_usuario",
-            "telefone_usuario"
+            "telefone_usuario",
+            "autor_livro"
         };
-        String [] valuesSave = {
-            values.get("data_inicio").toString(),
+
+        String[] valuesSave = {
+            values.get("data_emprestimo"),
             LocalDate.now().toString(),
-            values.get("id_usuario").toString(),
-            values.get("num_registro").toString(),
-            values.get("titulo").toString(),
-            values.get("volume").toString(),
-            values.get("exemplar").toString(),
-            values.get("nome").toString(),
-            values.get("turma").toString(),
-            values.get("telefone").toString()
+            values.get("id_usuario"),
+            values.get("id_livro"),
+            values.get("titulo_livro"),
+            values.get("volume_livro"),
+            values.get("exemplar_livro"),
+            values.get("nome_usuario"),
+            values.get("turma_usuario"),
+            values.get("telefone_usuario"),
+            values.get("autor_livro")
         };
-        
+
         try {
             repositorio.save("emprestimos_encerrados", columns, valuesSave);
-            repositorio.delete("emprestimo", String.format("id_emprestimo = '%s'", id));
-            IPopupMsg controller = MsgFabrica.criaPopupMsg("PopupAcaoMsg");
-            controller.setManipulador(()->{
-                mainContainer.getChildren().remove(controller.getPopup());
-            });
-            mainContainer.getChildren().add(controller.getPopup());
+            repositorio.delete("emprestimo", "id_emprestimo = '" + id + "'");
             mainContainer.getChildren().remove(popup);
             buscar();
         } catch (SQLException ex) {
-            Logger.getLogger(EmprestimoListagemController.class.getName()).log(Level.SEVERE, null, ex);
-        }  
+            Logger.getLogger(EmprestimoListagemController.class.getName())
+                  .log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void renovarManipulador(Pane popup, Pane mainContainer, String id) {
+        try {
+            repositorio.update(
+                "emprestimo",
+                new String[]{"data_devolucao"},
+                new String[]{LocalDate.now().plusDays(5).toString()},
+                "id_emprestimo = '" + id + "'"
+            );
+            mainContainer.getChildren().remove(popup);
+            buscar();
+        } catch (SQLException ex) {
+            Logger.getLogger(EmprestimoListagemController.class.getName())
+                  .log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @FXML
+    public void buscar() {
+        render_box_elements.getChildren().clear();
+
+        String searchBar = pesquisarText.getText().toUpperCase();
+        String consult = String.format(
+            "UPPER(nome_usuario) like '%%%s%%' OR UPPER(titulo_livro) like '%%%s%%' " +
+            "ORDER BY data_devolucao asc",
+            searchBar, searchBar
+        );
+
+        try {
+            boolean isEncerrado = atrasadosBtn.isSelected();
+            ResultSet response = repositorio.get(
+                isEncerrado ? "emprestimos_encerrados" : "emprestimo",
+                consult
+            );
+
+            HBox box = null;
+            boolean novaLinha = true;
+
+            while (response.next()) {
+                if (novaLinha) {
+                    box = new HBox();
+                    render_box_elements.getChildren().add(box);
+                }
+                adicionarComponente(box, response, isEncerrado);
+                novaLinha = !novaLinha;
+            }
+
+        } catch (SQLException | IOException ex) {
+            Logger.getLogger(EmprestimoListagemController.class.getName())
+                  .log(Level.SEVERE, null, ex);
+        }
     }
     
-    // Renova um empréstimo
-    private void renovarManipulador(Pane popup, Pane mainContainer, String id) {
-        String[] values = {LocalDate.now().plusDays(5).toString()};
-        String[] columns = {"data_devolucao"};
-        try {
-            repositorio.update("emprestimo", columns, values, String.format("id_emprestimo = '%s'", id));
-            IPopupMsg controller = MsgFabrica.criaPopupMsg("PopupAcaoMsg");
-            controller.setManipulador(()->{
-                mainContainer.getChildren().remove(controller.getPopup());
-            });
-            mainContainer.getChildren().add(controller.getPopup());
-            mainContainer.getChildren().remove(popup);
-            buscar();
-        } catch (SQLException ex) {
-            Logger.getLogger(EmprestimoListagemController.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    // Faz uma busca no banco de dados, de acordo com o filtro
-    @FXML
-    public void buscar(){
-        ResultSet response;
-        render_box_elements.getChildren().clear();
-        String searchBar = pesquisarText.getText().toUpperCase();
-        String consult = String.format( "UPPER(nome_usuario) like '%%%s%%' OR UPPER(titulo_livro) like '%%%s%%'"
-                + "ORDER BY data_devolucao asc",searchBar, searchBar);
-        
-        try {
-            if(atrasadosBtn.isSelected()){
-                response = repositorio.get("emprestimos_atrasados", consult); 
-            }else {
-                  response = repositorio.get("emprestimo", consult);
-            }
-            HBox box = null;
-            boolean status = true;
-            while(response.next()){
-                if(status){
-                   box = new HBox();
-                   render_box_elements.getChildren().add(box);
-                   status = false;
-                   adicionarComponente(box, response);
-                } else{
-                   status = true;
-                   adicionarComponente(box, response);
-                }
-            }
-        } catch (SQLException | IOException ex) {
-            Logger.getLogger(AlunoListagemController.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    // Pesquisa acionada pela tecla ENTER
     @FXML
     protected void buscarTeclaPressionada(){
         pesquisarText.setOnKeyPressed(event->{
@@ -224,5 +295,5 @@ public class EmprestimoListagemController extends TelasController implements Ini
     public void initialize(URL location, ResourceBundle resources) {
         buscar();
     }
-
 }
+

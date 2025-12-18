@@ -93,6 +93,4 @@ public class BookifyDatabase implements IRepository {
         String query = String.format("select %s", function);
         return statement.executeQuery(query);
     }
-    
-    // talvez uma boa de refatorar isso
 }

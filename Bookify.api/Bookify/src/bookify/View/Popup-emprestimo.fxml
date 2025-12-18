@@ -21,7 +21,7 @@
                   <Font name="System Bold" size="24.0" />
                </font>
             </Text>
-            <Button layoutX="342.0" layoutY="278.0" mnemonicParsing="false" onAction="#encerrar" styleClass="renovar-style" stylesheets="@styles.css" text="ENCERRAR" textFill="WHITE">
+            <Button fx:id="acaoBtn" layoutX="342.0" layoutY="278.0" mnemonicParsing="false" onAction="#encerrar" styleClass="renovar-style" stylesheets="@styles.css" text="ENCERRAR" textFill="WHITE">
                <font>
                   <Font name="System Bold" size="18.0" />
                </font>
